@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import 'package:fruit_cart/cart_item.dart';
 
 import 'fruit.dart';
@@ -77,12 +78,16 @@ class _MyHomePageState extends State<MyHomePage>
               );
             },
           ),
-          Positioned(
-            right: 0,
-            height: size.height,
-            width: 100,
-            child: _buildSecondList(),
-          )
+          AnimatedBuilder(
+              animation: slideController,
+              builder: (context, snapshot) {
+                return Positioned(
+                  right: 0,
+                  height: size.height,
+                  width: 100 * slideController.value,
+                  child: _buildSecondList(),
+                );
+              })
         ],
       ),
     );
@@ -133,6 +138,7 @@ class _MyHomePageState extends State<MyHomePage>
   }
 
   Widget _buildFruit(Fruit fruit) {
+    GlobalKey key = GlobalKey();
     return Row(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
@@ -155,6 +161,7 @@ class _MyHomePageState extends State<MyHomePage>
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Container(
+                    key: key,
                     color: fruit.color,
                     child: Image.asset(
                       fruit.image,
@@ -188,7 +195,20 @@ class _MyHomePageState extends State<MyHomePage>
             ),
             InkWell(
               onTap: () {
-                if (cartFruit.length == 0) slideController.forward();
+                if (cartFruits.length == 0) slideController.forward();
+                setState(() {
+                  fruit.currentPosition = getPositionByKey(key);
+                  int index = cartFruits.indexOf(fruit);
+                  if (index != -1) {
+                    cartFruits[index].qty += 1;
+                    cartFruits[index].qty == 2
+                        ? cartFruits[index].reAnimate = true
+                        : null;
+                  } else {
+                    fruit.qty = 1;
+                    cartFruits.add(fruit);
+                  }
+                });
               },
               child: Card(
                 elevation: 4,
@@ -225,4 +245,24 @@ class _MyHomePageState extends State<MyHomePage>
       ),
     );
   }
+}
+
+Position getPositionByKey(GlobalKey key) {
+  RenderBox box = key.currentContext!.findRenderObject()! as RenderBox;
+  Size size = box.size;
+  Offset position = box.localToGlobal(Offset.zero);
+  double x = position.dx;
+  double y = position.dy;
+  return Position(x: x, y: y, size: size);
+}
+
+class Position {
+  double x;
+  double y;
+  Size size;
+  Position({
+    required this.x,
+    required this.y,
+    required this.size,
+  });
 }

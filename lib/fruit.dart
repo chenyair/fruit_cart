@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 
+import 'main.dart';
+
 class Fruit {
   String name;
   String image;
   double price;
   int qty = 0;
   Color? color;
+  Position? position;
+  bool animtae = false;
 
   Fruit({
     required this.name,
@@ -14,6 +18,27 @@ class Fruit {
     required this.qty,
     required this.color,
   });
+
+  set reAnimate(bool animate) => this.animtae = animate;
+  set currentPosition(Position position) => this.position = position;
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+
+    return other is Fruit && other.name == name;
+  }
+
+  @override
+  int get hashCode {
+    return name.hashCode ^
+        image.hashCode ^
+        price.hashCode ^
+        qty.hashCode ^
+        color.hashCode ^
+        position.hashCode ^
+        animtae.hashCode;
+  }
 }
 
 List<Fruit> getFruitList() {
