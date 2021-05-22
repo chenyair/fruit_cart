@@ -20,6 +20,13 @@ class CartItem extends StatefulWidget {
 class _CartItemState extends State<CartItem> with TickerProviderStateMixin {
   late AnimationController moveController;
   late Animation moveAnimation;
+
+  late AnimationController scaleController;
+  late Animation<double> scaleAnimation;
+
+  late AnimationController secondMoveController;
+  late Animation secondMoveAnimation;
+
   late Position fromPosition;
   GlobalKey currentKey = GlobalKey();
 
@@ -28,8 +35,17 @@ class _CartItemState extends State<CartItem> with TickerProviderStateMixin {
     super.initState();
     moveController =
         AnimationController(vsync: this, duration: Duration(milliseconds: 700));
+    secondMoveController =
+        AnimationController(vsync: this, duration: Duration(milliseconds: 700));
+    scaleController = AnimationController(
+        vsync: this, duration: Duration(milliseconds: 300), upperBound: .3);
+
     moveAnimation =
         CurvedAnimation(parent: moveController, curve: Curves.easeInOut);
+    secondMoveAnimation =
+        CurvedAnimation(parent: secondMoveController, curve: Curves.easeInOut);
+    scaleAnimation =
+        CurvedAnimation(parent: scaleController, curve: Curves.easeInOut);
     moveController.forward();
   }
 
@@ -40,7 +56,7 @@ class _CartItemState extends State<CartItem> with TickerProviderStateMixin {
       key: currentKey,
       height: 120,
       width: 90,
-      child: _buildMoving(),
+      child: widget.fruit.qty == 1 ? _buildMoving() : _buildStackMoving(),
     );
   }
 
@@ -61,16 +77,18 @@ class _CartItemState extends State<CartItem> with TickerProviderStateMixin {
           if (x == 0) return Container();
           return Transform.translate(
             offset: Offset(
-                x * (1 - moveAnimation.value), y * (1 - moveAnimation.value)),
+              x * (1 - moveAnimation.value),
+              y * (1 - moveAnimation.value),
+            ),
             child: _buildCard(),
           );
         });
   }
 
-  Widget _buildCard() {
+  Widget _buildCard({double opacity = 1}) {
     return Column(
       children: [
-        _buildContainerImage(),
+        Opacity(opacity: opacity, child: _buildContainerImage()),
         Container(
           height: 20,
           width: 20,
@@ -86,10 +104,10 @@ class _CartItemState extends State<CartItem> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildContainerImage() {
+  Widget _buildContainerImage({double size = 80}) {
     return Container(
-      height: 80,
-      width: 80,
+      height: size,
+      width: size,
       margin: EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: widget.fruit.color,
@@ -100,6 +118,53 @@ class _CartItemState extends State<CartItem> with TickerProviderStateMixin {
         width: 40,
         height: 40,
       ),
+    );
+  }
+
+  Widget _buildStackMoving() {
+    if (widget.fruit.animtae) {
+      widget.fruit.animtae = false;
+      scaleController.reset();
+      scaleController.forward();
+      secondMoveController.reset();
+      secondMoveController.forward();
+    }
+
+    return Stack(
+      children: [
+        AnimatedBuilder(
+            animation: scaleController,
+            builder: (context, snapshot) {
+              return Transform.scale(
+                  scale: 1 - scaleAnimation.value,
+                  child: _buildCard(opacity: .4));
+            }),
+        AnimatedBuilder(
+            animation: secondMoveController,
+            builder: (context, snapshot) {
+              Position currentPosition;
+              double x = 0, y = 0;
+              if (currentKey.currentContext!.findRenderObject() != null) {
+                currentPosition = getPositionByKey(currentKey);
+                x = fromPosition.x -
+                    currentPosition.x +
+                    fromPosition.size.width -
+                    90;
+                y = fromPosition.y - currentPosition.y;
+              }
+              if (x == 0) return Container();
+              return Transform.translate(
+                offset: Offset(
+                  x * (1 - secondMoveAnimation.value),
+                  y * (1 - secondMoveAnimation.value),
+                ),
+                child: Center(
+                  heightFactor: .9,
+                  child: _buildContainerImage(size: 70),
+                ),
+              );
+            }),
+      ],
     );
   }
 }
